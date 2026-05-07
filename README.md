@@ -20,6 +20,8 @@ Permite organizar equipos, fase de grupos, resultados al mejor de tres sets, cla
 - Interfaz bilingue ES/EN con preferencia guardada.
 - Exportacion e importacion de datos en JSON.
 - Datos de ejemplo para probar rapidamente.
+- Impresion del cuadro preparada para guardar como PDF desde el navegador.
+- Exportacion PDF multipagina para cuadros grandes, dividiendo el bracket por rondas.
 
 ## 🚀 Puesta en marcha
 
@@ -53,6 +55,7 @@ Los tests cubren:
 - Generacion de cruces mejor vs peor de otro grupo.
 - Drag and drop de cruces y limpieza de resultados dependientes.
 - Traducciones basicas y textos dinamicos generados.
+- Division de rondas para impresion multipagina.
 
 ## 🌍 Internacionalizacion
 
@@ -98,7 +101,7 @@ Para mover datos entre equipos o hacer copias de seguridad, usa las opciones de 
 - URLs publicas por competicion.
 - Auditoria de cambios de resultados.
 - Programacion de horarios, pistas/canchas y sedes.
-- Exportacion a PDF o imagen del bracket.
+- Exportacion PDF binaria sin dialogo del navegador, si mas adelante se introduce bundler o libreria dedicada.
 - Configuracion por deporte: puntuacion, super tie-break, sets cortos o reglas especificas.
 
 ## 📌 Nota tecnica

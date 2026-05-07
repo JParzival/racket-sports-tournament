@@ -276,3 +276,35 @@ test("i18n helpers translate static and generated interface labels", () => {
   assert.equal(app.translateGeneratedText("Group B"), "Grupo B");
   assert.equal(app.translateGeneratedText("3 per group"), "3 por grupo");
 });
+
+test("multipage print chunks rounds for small and large brackets", () => {
+  const app = createHarness();
+  const smallRounds = [
+    { name: "Cuartos", matches: Array.from({ length: 4 }, () => ({})) },
+    { name: "Semifinales", matches: Array.from({ length: 2 }, () => ({})) },
+    { name: "Final", matches: Array.from({ length: 1 }, () => ({})) },
+  ];
+  const largeRounds = [
+    { name: "Ronda 1", matches: Array.from({ length: 16 }, () => ({})) },
+    { name: "Ronda 2", matches: Array.from({ length: 8 }, () => ({})) },
+    { name: "Cuartos", matches: Array.from({ length: 4 }, () => ({})) },
+    { name: "Semifinales", matches: Array.from({ length: 2 }, () => ({})) },
+    { name: "Final", matches: Array.from({ length: 1 }, () => ({})) },
+  ];
+
+  assert.equal(app.getPrintRoundsPerPage(smallRounds), 3);
+  assert.deepEqual(
+    toPlain(app.getPrintRoundChunks(smallRounds).map((chunk) => [chunk.startIndex, chunk.endIndex])),
+    [[0, 2]],
+  );
+  assert.equal(app.getPrintRoundsPerPage(largeRounds), 1);
+  assert.deepEqual(
+    toPlain(app.getPrintRoundChunks(largeRounds, 2).map((chunk) => [chunk.startIndex, chunk.endIndex])),
+    [
+      [0, 1],
+      [2, 3],
+      [4, 4],
+    ],
+  );
+  assert.equal(app.getPrintRoundRangeLabel(app.getPrintRoundChunks(largeRounds, 2)[0]), "Ronda 1 - Ronda 2");
+});

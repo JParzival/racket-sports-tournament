@@ -112,6 +112,17 @@ const TEXT_TRANSLATIONS_ES_EN = {
       "The best player/team from one group is paired with the lowest-ranked qualifier from another, second with second-lowest, and so on. With more than two groups, the rival group is selected at random.",
     "Clasificados por grupo": "Qualifiers per group",
     "Generar eliminatoria": "Generate knockout",
+    "Imprimir / PDF": "Print / PDF",
+    "PDF multipagina": "Multipage PDF",
+    "Imprimir cuadro o guardarlo como PDF": "Print bracket or save it as PDF",
+    "Preparar PDF multipagina para cuadros grandes": "Prepare a multipage PDF for large brackets",
+    "No hay cuadro para exportar": "There is no bracket to export",
+    "Preparando impresion del cuadro": "Preparing bracket print",
+    "Preparando PDF multipagina": "Preparing multipage PDF",
+    "Pagina": "Page",
+    "de": "of",
+    "Rondas": "Rounds",
+    "Cuadro eliminatorio": "Knockout bracket",
     "Despues de generar el cuadro puedes arrastrar equipos en la primera ronda para ajustar cruces manualmente.":
       "After generating the bracket, you can drag teams in the first round to adjust match-ups manually.",
     "Primero genera la fase de grupos para obtener clasificados.": "First generate the group stage to get qualifiers.",
@@ -260,6 +271,8 @@ document.addEventListener("click", (event) => {
     "clear-group-result": () => clearGroupResult(competitionId, id),
     "generate-bracket": () => generateBracket(competitionId),
     "clear-bracket-result": () => clearBracketResult(competitionId, id),
+    "print-bracket-pdf": () => printBracketAsPdf(),
+    "print-bracket-multipage-pdf": () => printBracketMultipagePdf(),
     "export-data": exportData,
     "trigger-import": () => importFile.click(),
     "reset-data": resetData,
@@ -1035,11 +1048,28 @@ function renderBracket(readOnly) {
         `
     }
 
+    ${competition.knockout.rounds.length ? renderBracketExportTools() : ""}
+
     ${
       competition.knockout.rounds.length
         ? `<div class="bracket">${competition.knockout.rounds.map((round, roundIndex) => renderBracketRound(competition, round, roundIndex, readOnly)).join("")}</div>`
         : emptyState("Cuadro pendiente", readOnly ? "La organizacion aun no ha publicado la eliminatoria." : "Genera el cuadro cuando tengas clasificaciones.")
     }
+  `;
+}
+
+function renderBracketExportTools() {
+  return `
+    <section class="panel export-panel">
+      <div class="toolbar">
+        <button class="ghost-button" type="button" data-action="print-bracket-pdf" aria-label="Imprimir cuadro o guardarlo como PDF">
+          Imprimir / PDF
+        </button>
+        <button class="ghost-button" type="button" data-action="print-bracket-multipage-pdf" aria-label="Preparar PDF multipagina para cuadros grandes">
+          PDF multipagina
+        </button>
+      </div>
+    </section>
   `;
 }
 
@@ -1879,6 +1909,126 @@ function exportData() {
   link.click();
   URL.revokeObjectURL(url);
   showToast("Exportacion preparada");
+}
+
+function printBracketAsPdf() {
+  const competition = getSelectedCompetition();
+  const bracket = document.querySelector(".bracket");
+
+  if (!competition?.knockout.rounds.length || !bracket) {
+    showToast("No hay cuadro para exportar");
+    return;
+  }
+
+  document.querySelector(".print-bracket-title")?.remove();
+  const title = document.createElement("div");
+  title.className = "print-bracket-title";
+  title.innerHTML = `
+    <strong>${escapeHtml(competition.name)}</strong>
+    <span>${escapeHtml(competition.category || localizeMessage("Cuadro eliminatorio"))}</span>
+  `;
+  bracket.before(title);
+
+  const cleanup = () => {
+    document.body.classList.remove("print-bracket-only");
+    title.remove();
+  };
+
+  document.body.classList.add("print-bracket-only");
+  window.addEventListener("afterprint", cleanup, { once: true });
+  showToast("Preparando impresion del cuadro");
+  setTimeout(() => window.print(), 80);
+}
+
+function printBracketMultipagePdf() {
+  const competition = getSelectedCompetition();
+
+  if (!competition?.knockout.rounds.length) {
+    showToast("No hay cuadro para exportar");
+    return;
+  }
+
+  document.querySelector(".multipage-print-root")?.remove();
+  const chunks = getPrintRoundChunks(competition.knockout.rounds);
+  const printRoot = document.createElement("div");
+  printRoot.className = "multipage-print-root";
+  printRoot.innerHTML = renderPrintableBracketPages(competition, chunks);
+  document.body.appendChild(printRoot);
+  applyTranslations(printRoot);
+
+  const cleanup = () => {
+    document.body.classList.remove("print-bracket-multipage");
+    printRoot.remove();
+  };
+
+  document.body.classList.add("print-bracket-multipage");
+  window.addEventListener("afterprint", cleanup, { once: true });
+  showToast("Preparando PDF multipagina");
+  setTimeout(() => window.print(), 80);
+}
+
+function getPrintRoundChunks(rounds, roundsPerPage = getPrintRoundsPerPage(rounds)) {
+  const pageSize = clamp(Number(roundsPerPage) || 1, 1, Math.max(rounds.length, 1));
+  const chunks = [];
+
+  for (let index = 0; index < rounds.length; index += pageSize) {
+    chunks.push({
+      startIndex: index,
+      endIndex: Math.min(index + pageSize - 1, rounds.length - 1),
+      rounds: rounds.slice(index, index + pageSize),
+    });
+  }
+
+  return chunks;
+}
+
+function getPrintRoundsPerPage(rounds) {
+  const roundCount = rounds.length;
+  const firstRoundMatchCount = rounds[0]?.matches?.length || 0;
+
+  if (roundCount <= 3 && firstRoundMatchCount <= 8) return 3;
+  if (firstRoundMatchCount >= 16) return 1;
+  return 2;
+}
+
+function renderPrintableBracketPages(competition, chunks) {
+  return chunks
+    .map(
+      (chunk, pageIndex) => `
+        <section class="print-page">
+          <div class="print-bracket-title">
+            <strong>${escapeHtml(competition.name)}</strong>
+            <span>${escapeHtml(getPrintPageMeta(chunk, pageIndex, chunks.length))}</span>
+          </div>
+          <div class="bracket print-bracket-slice">
+            ${chunk.rounds.map((round, localIndex) => renderPrintableBracketRound(competition, round, localIndex)).join("")}
+          </div>
+        </section>
+      `,
+    )
+    .join("");
+}
+
+function renderPrintableBracketRound(competition, round, localIndex) {
+  const roundGap = 16 + localIndex * 28;
+  return `
+    <section class="bracket-round" style="--round-gap: ${roundGap}px; --round-offset: ${localIndex * 24}px; --connector-height: ${94 + roundGap / 2}px">
+      <h3>${escapeHtml(round.name)}</h3>
+      ${round.matches.map((match) => renderBracketMatch(competition, match, localIndex, true)).join("")}
+    </section>
+  `;
+}
+
+function getPrintPageMeta(chunk, pageIndex, pageCount) {
+  const range = getPrintRoundRangeLabel(chunk);
+  if (ui.lang === "en") return `Page ${pageIndex + 1} of ${pageCount} - Rounds: ${translateText(range) || range}`;
+  return `Pagina ${pageIndex + 1} de ${pageCount} - Rondas: ${range}`;
+}
+
+function getPrintRoundRangeLabel(chunk) {
+  const first = chunk.rounds[0]?.name || "";
+  const last = chunk.rounds[chunk.rounds.length - 1]?.name || first;
+  return first === last ? first : `${first} - ${last}`;
 }
 
 function importData(event) {

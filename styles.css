@@ -640,6 +640,12 @@ tr:last-child td {
   font-weight: 900;
 }
 
+.export-panel {
+  box-shadow: none;
+  margin-bottom: 16px;
+  padding: 12px;
+}
+
 .bracket {
   align-items: start;
   display: grid;
@@ -741,6 +747,39 @@ tr:last-child td {
   font-weight: 900;
   min-height: 15px;
   text-transform: uppercase;
+}
+
+.print-bracket-title {
+  color: var(--ink);
+  display: grid;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+
+.print-bracket-title strong {
+  font-size: 1.35rem;
+}
+
+.print-bracket-title span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.print-bracket-title {
+  display: none;
+}
+
+.multipage-print-root {
+  display: none;
+}
+
+.print-page {
+  background: #ffffff;
+  color: var(--ink);
+}
+
+.print-bracket-slice {
+  overflow: visible;
 }
 
 .bye {
@@ -881,5 +920,103 @@ tr:last-child td {
 
   .bracket-round {
     min-width: 280px;
+  }
+}
+
+@media print {
+  @page {
+    margin: 10mm;
+    size: A4 landscape;
+  }
+
+  body.print-bracket-only {
+    background: #ffffff;
+  }
+
+  body.print-bracket-multipage {
+    background: #ffffff;
+  }
+
+  body.print-bracket-only .topbar,
+  body.print-bracket-only .sidebar,
+  body.print-bracket-only .section-header,
+  body.print-bracket-only .export-panel,
+  body.print-bracket-only .toast {
+    display: none !important;
+  }
+
+  body.print-bracket-only .workspace {
+    display: block;
+    min-height: 0;
+  }
+
+  body.print-bracket-only .main-panel {
+    padding: 0;
+  }
+
+  body.print-bracket-only .main-panel > :not(.print-bracket-title):not(.bracket) {
+    display: none !important;
+  }
+
+  body.print-bracket-only .print-bracket-title {
+    display: grid;
+  }
+
+  body.print-bracket-only .bracket {
+    display: grid;
+    gap: 20px;
+    grid-auto-columns: minmax(235px, 1fr);
+    overflow: visible;
+    padding: 0;
+  }
+
+  body.print-bracket-only .bracket-round {
+    min-width: 235px;
+  }
+
+  body.print-bracket-only .match-card,
+  body.print-bracket-only .bracket-round h3 {
+    box-shadow: none;
+  }
+
+  body.print-bracket-multipage .app-shell,
+  body.print-bracket-multipage .toast {
+    display: none !important;
+  }
+
+  body.print-bracket-multipage .multipage-print-root {
+    display: block;
+  }
+
+  body.print-bracket-multipage .print-page {
+    break-after: page;
+    page-break-after: always;
+    padding: 0;
+  }
+
+  body.print-bracket-multipage .print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  body.print-bracket-multipage .print-bracket-title {
+    display: grid;
+  }
+
+  body.print-bracket-multipage .bracket {
+    display: grid;
+    gap: 20px;
+    grid-auto-columns: minmax(235px, 1fr);
+    overflow: visible;
+    padding: 0;
+  }
+
+  body.print-bracket-multipage .bracket-round {
+    min-width: 235px;
+  }
+
+  body.print-bracket-multipage .match-card,
+  body.print-bracket-multipage .bracket-round h3 {
+    box-shadow: none;
   }
 }
