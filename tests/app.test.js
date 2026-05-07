@@ -91,6 +91,9 @@ function createSavedState() {
         id: "competition",
         name: "Test competition",
         category: "Test",
+        sport: "padel",
+        playMode: "doubles",
+        format: "groups-knockout",
         groupCount: 2,
         teamIds: teams.map((team) => team.id),
         groups: [],
@@ -268,13 +271,62 @@ test("i18n helpers translate static and generated interface labels", () => {
   app.setLanguage("en");
   assert.equal(app.translateText("Administración"), "Admin");
   assert.equal(app.translateText("Vista pública"), "Public view");
+  assert.equal(app.translateText("Participantes"), "Participants");
+  assert.equal(app.translateText("Grupos + eliminatoria"), "Groups + knockout");
   assert.equal(app.translateGeneratedText("Grupo B"), "Group B");
+  assert.equal(app.translateGeneratedText("2 parejas/equipos"), "2 pairs/teams");
   assert.equal(app.translateGeneratedText("3 por grupo"), "3 per group");
 
   app.setLanguage("es");
   assert.equal(app.translateText("Admin"), "Administración");
   assert.equal(app.translateGeneratedText("Group B"), "Grupo B");
+  assert.equal(app.translateGeneratedText("2 pairs/teams"), "2 parejas/equipos");
   assert.equal(app.translateGeneratedText("3 per group"), "3 por grupo");
+});
+
+test("competition creation stores sport, play mode and stage format", () => {
+  const app = createHarness({ version: 1, teams: [], competitions: [], savedAt: new Date(0).toISOString() });
+
+  app.addCompetition({
+    get(name) {
+      return {
+        name: "Direct tennis draw",
+        category: "Open",
+        sport: "tennis",
+        playMode: "singles",
+        format: "knockout",
+        groupCount: "4",
+      }[name];
+    },
+  });
+
+  const competition = app.getSelectedCompetition();
+  assert.equal(competition.sport, "tennis");
+  assert.equal(competition.playMode, "singles");
+  assert.equal(competition.format, "knockout");
+  assert.equal(competition.groupCount, 1);
+  assert.equal(app.hasGroupStage(competition), false);
+  assert.equal(app.hasKnockoutStage(competition), true);
+});
+
+test("direct knockout pairings use assigned participants without groups", () => {
+  const app = createHarness();
+  const competition = app.getCompetition("competition");
+  competition.format = "knockout";
+  competition.playMode = "singles";
+  competition.groups = [];
+
+  const pairings = app.getDirectKnockoutPairings(competition);
+
+  assert.deepEqual(
+    toPlain(pairings.map((pair) => pair.map((seed) => seed.teamId))),
+    [
+      ["a1", "b3"],
+      ["a2", "b2"],
+      ["a3", "b1"],
+    ],
+  );
+  assert.equal(pairings[0][0].label, "persona 1");
 });
 
 test("multipage print chunks rounds for small and large brackets", () => {
@@ -307,4 +359,34 @@ test("multipage print chunks rounds for small and large brackets", () => {
     ],
   );
   assert.equal(app.getPrintRoundRangeLabel(app.getPrintRoundChunks(largeRounds, 2)[0]), "Ronda 1 - Ronda 2");
+});
+
+test("printable group pages include standings and every group match", () => {
+  const savedState = createSavedState();
+  savedState.competitions[0].sport = "ping-pong";
+  savedState.competitions[0].playMode = "singles";
+  savedState.competitions[0].format = "groups";
+  savedState.competitions[0].groups = [
+    {
+      id: "group-a",
+      name: "Grupo A",
+      teamIds: ["a1", "a2", "a3"],
+      matches: [
+        match("a1", "a2", [{ home: 6, away: 1 }, { home: 6, away: 2 }, { home: null, away: null }]),
+        match("a1", "a3", [{ home: null, away: null }, { home: null, away: null }, { home: null, away: null }]),
+        match("a2", "a3", [{ home: 6, away: 4 }, { home: 4, away: 6 }, { home: 6, away: 3 }]),
+      ],
+    },
+  ];
+  const app = createHarness(savedState);
+  const competition = app.getCompetition("competition");
+
+  const html = app.renderPrintableGroupPages(competition);
+
+  assert.match(html, /Grupo A/);
+  assert.match(html, /Cruces del grupo/);
+  assert.match(html, /A1 vs A2/);
+  assert.match(html, /6-1 \/ 6-2/);
+  assert.match(html, /A1 vs A3/);
+  assert.match(html, /Sin resultado/);
 });

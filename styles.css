@@ -314,9 +314,10 @@ h3 {
 
 .metric strong {
   display: block;
-  font-size: 2rem;
+  font-size: 1.7rem;
   line-height: 1;
   margin-bottom: 8px;
+  overflow-wrap: anywhere;
 }
 
 .metric span {
@@ -369,6 +370,12 @@ h3 {
   color: var(--muted);
   font-size: 0.88rem;
   font-weight: 800;
+}
+
+.field-hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
 }
 
 input,
@@ -773,9 +780,31 @@ tr:last-child td {
   display: none;
 }
 
+.group-print-root {
+  display: none;
+}
+
 .print-page {
   background: #ffffff;
   color: var(--ink);
+}
+
+.print-section-title {
+  color: var(--accent-strong);
+  margin: 18px 0 10px;
+}
+
+.print-match-list {
+  display: grid;
+  gap: 8px;
+}
+
+.print-match-row {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
 }
 
 .print-bracket-slice {
@@ -937,6 +966,10 @@ tr:last-child td {
     background: #ffffff;
   }
 
+  body.print-groups {
+    background: #ffffff;
+  }
+
   body.print-bracket-only .topbar,
   body.print-bracket-only .sidebar,
   body.print-bracket-only .section-header,
@@ -1018,5 +1051,44 @@ tr:last-child td {
   body.print-bracket-multipage .match-card,
   body.print-bracket-multipage .bracket-round h3 {
     box-shadow: none;
+  }
+
+  body.print-groups .app-shell,
+  body.print-groups .toast {
+    display: none !important;
+  }
+
+  body.print-groups .group-print-root {
+    display: block;
+  }
+
+  body.print-groups .print-page {
+    break-after: page;
+    page-break-after: always;
+    padding: 0;
+  }
+
+  body.print-groups .print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  body.print-groups .print-bracket-title {
+    display: grid;
+  }
+
+  body.print-groups .standing-table,
+  body.print-groups .print-match-row {
+    box-shadow: none;
+  }
+
+  body.print-groups table {
+    font-size: 0.82rem;
+    min-width: 0;
+  }
+
+  body.print-groups th,
+  body.print-groups td {
+    padding: 7px;
   }
 }

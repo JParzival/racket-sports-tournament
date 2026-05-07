@@ -1,19 +1,24 @@
-# 🎾 Racket Tournament Control
+﻿# 🎾 Racket Tournament Control
 
-Static web application for managing racket sports competitions: padel, tennis, pickleball, squash, badminton, or other doubles/team-based formats.
+Static web application for managing racket sports competitions: ping-pong, tennis and padel, in either singles or pairs/team formats.
 
-It lets you manage teams, group stages, best-of-three-set match results, automatic standings, and professional-style knockout brackets. This is a functional frontend-only base: it runs in the browser and stores data locally.
+It lets you manage participants, group stages, best-of-three-set match results, automatic standings, professional-style knockout brackets, and PDF exports. This is a functional frontend-only base: it runs in the browser and stores data locally.
 
 ## ✨ Features
 
-- Team registration with two players and an associated sport.
+- Participant registration for people, pairs or teams.
+- Tournament configuration by sport, play mode and competition format.
+- Supported sports: ping-pong, tennis and padel.
+- Supported formats: groups only, knockout only, or groups followed by knockout.
 - Group-stage competition management.
 - Best-of-three-set match scoring.
 - Automatic standings based on wins, sets, and games.
 - Knockout bracket generation from group standings.
+- Direct knockout bracket generation from assigned participants.
 - Automatic seeding: top-ranked teams face lower-ranked teams from other groups.
 - Manual bracket adjustments with drag and drop before matches are started.
 - Visual bracket view inspired by professional racket-sport tournaments.
+- Group standings and match-up export to PDF.
 - Bracket export to PDF.
 - Advanced multipage PDF export for large brackets.
 - Separate admin and viewer modes.
@@ -46,7 +51,7 @@ Run the automated tests with:
 npm test
 ```
 
-The tests cover core tournament logic such as best-of-three-set scoring, standings calculation, bracket generation, manual bracket movement, and PDF export helpers.
+The tests cover core tournament logic such as best-of-three-set scoring, standings calculation, competition format metadata, bracket generation, manual bracket movement, and PDF export helpers for brackets and groups.
 
 ## 🌍 Internationalization
 
@@ -92,6 +97,7 @@ This keeps the application simple and portable, although it also means data is t
 
 ## 🗺️ Recommended Roadmap
 
+- Improvements in consistency of individual vs teams visualization and sign in to tournaments
 - Backend and user authentication.
 - Real database support.
 - Role-based permissions for admins and viewers.
