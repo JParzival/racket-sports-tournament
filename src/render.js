@@ -679,7 +679,7 @@ function renderBracket(readOnly) {
 
     ${
       competition.knockout.rounds.length
-        ? `<div class="bracket">${competition.knockout.rounds.map((round, roundIndex) => renderBracketRound(competition, round, roundIndex, readOnly)).join("")}</div>`
+        ? renderBracketGrid(competition, competition.knockout.rounds, readOnly)
         : emptyState("Cuadro pendiente", readOnly ? "La organización aún no ha publicado la eliminatoria." : "Genera el cuadro cuando la competición tenga participantes suficientes.")
     }
   `;
@@ -734,17 +734,80 @@ function renderGroupExportTools() {
   `;
 }
 
-function renderBracketRound(competition, round, roundIndex, readOnly) {
-  const roundGap = 16 + roundIndex * 44;
+function getBracketLayout(rounds) {
+  const rowCount = Math.max(1, rounds[0]?.matches?.length || 0);
+  const roundLayouts = rounds.map((round, roundIndex) => {
+    const rowSpan = 2 ** roundIndex;
+    return {
+      round,
+      roundIndex,
+      column: roundIndex * 2 + 1,
+      matches: round.matches.map((match, matchIndex) => ({
+        match,
+        gridRow: matchIndex * rowSpan + 2,
+        rowSpan,
+      })),
+    };
+  });
+  const connectorLayouts = rounds.slice(1).map((round, index) => {
+    const parentSpan = 2 ** (index + 1);
+    return {
+      column: index * 2 + 2,
+      connectors: round.matches.map((match, matchIndex) => ({
+        id: `${match.id}-connector`,
+        gridRow: matchIndex * parentSpan + 2,
+        rowSpan: parentSpan,
+      })),
+    };
+  });
+
+  return {
+    rowCount,
+    columnCount: Math.max(1, rounds.length * 2 - 1),
+    columns: rounds.map((_, index) => (index === rounds.length - 1 ? "minmax(var(--bracket-round-width), 1fr)" : "minmax(var(--bracket-round-width), 1fr) var(--bracket-connector-width)")).join(" "),
+    rounds: roundLayouts,
+    connectors: connectorLayouts,
+  };
+}
+
+function renderBracketGrid(competition, rounds, readOnly) {
+  const layout = getBracketLayout(rounds);
+  const children = layout.rounds
+    .map((roundLayout, index) => `${renderBracketRound(competition, roundLayout.round, roundLayout.roundIndex, readOnly, roundLayout)}${layout.connectors[index] ? renderBracketConnectorColumn(layout.connectors[index]) : ""}`)
+    .join("");
+
+  return `<div class="bracket" style="--bracket-row-count: ${layout.rowCount}; --bracket-column-count: ${layout.columnCount}; grid-template-columns: ${escapeHtml(layout.columns)};">${children}</div>`;
+}
+
+function renderBracketRound(competition, round, roundIndex, readOnly, layoutRound = null) {
+  const matchLayouts = layoutRound?.matches || getBracketLayout([round]).rounds[0].matches;
   return `
-    <section class="bracket-round" style="--round-gap: ${roundGap}px; --round-offset: ${roundIndex * 42}px; --connector-height: ${94 + roundGap / 2}px">
+    <section class="bracket-round" style="grid-column: ${layoutRound?.column || 1}">
       <h3>${escapeHtml(round.name)}</h3>
-      ${round.matches.map((match) => renderBracketMatch(competition, match, roundIndex, readOnly)).join("")}
+      ${matchLayouts.map(({ match, gridRow, rowSpan }) => renderBracketMatch(competition, match, roundIndex, readOnly, `grid-row: ${gridRow} / span ${rowSpan}`)).join("")}
     </section>
   `;
 }
 
-function renderBracketMatch(competition, match, roundIndex, readOnly) {
+function renderBracketConnectorColumn(layoutConnector) {
+  return `
+    <section class="bracket-connectors" aria-hidden="true" style="grid-column: ${layoutConnector.column}">
+      ${layoutConnector.connectors
+        .map(
+          (connector) => `
+            <div class="bracket-connector" style="grid-row: ${connector.gridRow} / span ${connector.rowSpan}">
+              <span class="connector-arm top"></span>
+              <span class="connector-arm bottom"></span>
+              <span class="connector-arm middle"></span>
+            </div>
+          `,
+        )
+        .join("")}
+    </section>
+  `;
+}
+
+function renderBracketMatch(competition, match, roundIndex, readOnly, layoutStyle = "") {
   ensureMatchShape(match);
   const home = match.homeTeamId ? getTeamName(match.homeTeamId) : match.homeLabel || "Por definir";
   const away = match.awayTeamId ? getTeamName(match.awayTeamId) : match.awayLabel || "Por definir";
@@ -753,7 +816,7 @@ function renderBracketMatch(competition, match, roundIndex, readOnly) {
   const editableSlots = !readOnly && roundIndex === 0;
 
   return `
-    <article class="match-card bracket-match">
+    <article class="match-card bracket-match" ${layoutStyle ? `style="${layoutStyle}"` : ""}>
       <div class="match-meta">
         <span>Partido ${match.order}</span>
         <span>${hasResult(match) ? "Finalizado" : winner && !canScore ? "Bye" : "Pendiente"}</span>
@@ -1032,9 +1095,7 @@ function renderPrintableBracketPages(competition, chunks) {
             <strong>${escapeHtml(competition.name)}</strong>
             <span>${escapeHtml(getPrintPageMeta(chunk, pageIndex, chunks.length))}</span>
           </div>
-          <div class="bracket print-bracket-slice">
-            ${chunk.rounds.map((round, localIndex) => renderPrintableBracketRound(competition, round, localIndex)).join("")}
-          </div>
+          ${renderBracketGrid(competition, chunk.rounds, true)}
         </section>
       `,
     )
@@ -1042,13 +1103,7 @@ function renderPrintableBracketPages(competition, chunks) {
 }
 
 function renderPrintableBracketRound(competition, round, localIndex) {
-  const roundGap = 16 + localIndex * 28;
-  return `
-    <section class="bracket-round" style="--round-gap: ${roundGap}px; --round-offset: ${localIndex * 24}px; --connector-height: ${94 + roundGap / 2}px">
-      <h3>${escapeHtml(round.name)}</h3>
-      ${round.matches.map((match) => renderBracketMatch(competition, match, localIndex, true)).join("")}
-    </section>
-  `;
+  return renderBracketRound(competition, round, localIndex, true);
 }
 
 function getPrintPageMeta(chunk, pageIndex, pageCount) {
@@ -1063,4 +1118,4 @@ function getPrintRoundRangeLabel(chunk) {
   return first === last ? first : `${first} - ${last}`;
 }
 
-Object.assign(RacketApp, { render: { render, renderModeButtons, renderLanguageButtons, getVisibleSections, isSectionEnabledForCompetition, renderNav, renderDashboard, renderNextStep, renderTeams, renderParticipantFilters, restoreParticipantSearchFocus, renderTeamCard, renderParticipantAvatarGroup, renderParticipantIdentity, renderParticipantMembers, renderPlayerAvatar, renderPlayerInput, renderCompetitions, renderCompetitionCard, renderTeamAssignment, renderGroupStage, renderGroup, renderStandingsTable, renderGroupMatch, renderBracket, getBracketGenerationHelp, renderBracketGenerationStatus, renderBracketExportTools, renderGroupExportTools, renderBracketRound, renderBracketMatch, renderBracketSlot, renderSetInputs, renderReadOnlyScore, renderPublicOverview, renderData, sectionHeader, emptyState, renderCompetitionSelect, renderPrintableGroupPages, getPrintableGroupMeta, renderPrintableGroupMatch, getPrintRoundChunks, getPrintRoundsPerPage, renderPrintableBracketPages, renderPrintableBracketRound, getPrintPageMeta, getPrintRoundRangeLabel } });
+Object.assign(RacketApp, { render: { render, renderModeButtons, renderLanguageButtons, getVisibleSections, isSectionEnabledForCompetition, renderNav, renderDashboard, renderNextStep, renderTeams, renderParticipantFilters, restoreParticipantSearchFocus, renderTeamCard, renderParticipantAvatarGroup, renderParticipantIdentity, renderParticipantMembers, renderPlayerAvatar, renderPlayerInput, renderCompetitions, renderCompetitionCard, renderTeamAssignment, renderGroupStage, renderGroup, renderStandingsTable, renderGroupMatch, renderBracket, getBracketGenerationHelp, renderBracketGenerationStatus, renderBracketExportTools, renderGroupExportTools, getBracketLayout, renderBracketGrid, renderBracketRound, renderBracketConnectorColumn, renderBracketMatch, renderBracketSlot, renderSetInputs, renderReadOnlyScore, renderPublicOverview, renderData, sectionHeader, emptyState, renderCompetitionSelect, renderPrintableGroupPages, getPrintableGroupMeta, renderPrintableGroupMatch, getPrintRoundChunks, getPrintRoundsPerPage, renderPrintableBracketPages, renderPrintableBracketRound, getPrintPageMeta, getPrintRoundRangeLabel } });

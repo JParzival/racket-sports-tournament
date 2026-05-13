@@ -231,6 +231,48 @@ test("RacketApp namespace exposes refactored modules", () => {
   assert.ok(app.RacketApp.bootstrap);
 });
 
+test("bracket layout centers later rounds over their source matches", () => {
+  const app = createHarness();
+  const rounds = [
+    { name: "Cuartos", matches: [{ id: "q1" }, { id: "q2" }, { id: "q3" }, { id: "q4" }] },
+    { name: "Semifinales", matches: [{ id: "s1" }, { id: "s2" }] },
+    { name: "Final", matches: [{ id: "f1" }] },
+  ];
+
+  const layout = app.getBracketLayout(rounds);
+
+  assert.deepEqual(toPlain(layout.rounds[0].matches.map(({ gridRow, rowSpan }) => [gridRow, rowSpan])), [
+    [2, 1],
+    [3, 1],
+    [4, 1],
+    [5, 1],
+  ]);
+  assert.deepEqual(toPlain(layout.rounds[1].matches.map(({ gridRow, rowSpan }) => [gridRow, rowSpan])), [
+    [2, 2],
+    [4, 2],
+  ]);
+  assert.deepEqual(toPlain(layout.rounds[2].matches.map(({ gridRow, rowSpan }) => [gridRow, rowSpan])), [[2, 4]]);
+  assert.deepEqual(toPlain(layout.connectors[0].connectors.map(({ gridRow, rowSpan }) => [gridRow, rowSpan])), [
+    [2, 2],
+    [4, 2],
+  ]);
+});
+
+test("bracket render uses explicit connector columns", () => {
+  const savedState = createSavedState();
+  savedState.competitions[0].knockout.rounds = [
+    { name: "Semifinales", matches: [{ id: "s1", order: 1, homeTeamId: "a1", awayTeamId: "a2", homeLabel: "", awayLabel: "", sets: [], winnerTeamId: null }, { id: "s2", order: 2, homeTeamId: "b1", awayTeamId: "b2", homeLabel: "", awayLabel: "", sets: [], winnerTeamId: null }] },
+    { name: "Final", matches: [{ id: "f1", order: 1, homeTeamId: null, awayTeamId: null, homeLabel: "Ganador partido 1", awayLabel: "Ganador partido 2", sets: [], winnerTeamId: null }] },
+  ];
+  const app = createHarness(savedState);
+  const html = app.renderBracket(false);
+
+  assert.match(html, /bracket-connectors/);
+  assert.match(html, /bracket-connector/);
+  assert.match(html, /grid-row: 2 \/ span 2/);
+  assert.doesNotMatch(html, /connector-height/);
+});
+
 test("swapping first-round bracket slots resets knockout results", () => {
   const savedState = createSavedState();
   savedState.competitions[0].knockout.rounds = [
