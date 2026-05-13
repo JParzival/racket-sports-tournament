@@ -359,12 +359,14 @@ function syncCompetitionFormatFields() {
 function syncParticipantForm() {
   const typeSelect = document.querySelector("#participantType");
   const individualPhotoField = document.querySelector("[data-individual-photo-field]");
+  const individualPhotoInput = document.querySelector("[name='individualPhoto']");
   const playersField = document.querySelector("[data-participant-players-field]");
   const playerInputs = [...document.querySelectorAll("[data-player-input]")];
   const playerPhotoInputs = [...document.querySelectorAll("[name='playerPhotos']")];
   const isIndividual = typeSelect?.value === "individual";
 
   individualPhotoField?.classList.toggle("hidden", !isIndividual);
+  if (individualPhotoInput) individualPhotoInput.disabled = !isIndividual;
   playersField?.classList.toggle("hidden", isIndividual);
   playerInputs.forEach((input) => {
     input.disabled = isIndividual;

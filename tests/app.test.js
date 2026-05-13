@@ -460,6 +460,16 @@ test("photo upload status shows selected files", () => {
   assert.deepEqual(toggles, [["has-file", true]]);
 });
 
+test("participant form uses the same photo upload UI for individual players", () => {
+  const app = createHarness();
+  const html = app.renderTeams();
+
+  assert.match(html, /name="individualPhoto"/);
+  assert.match(html, /data-player-photo-input/);
+  assert.match(html, /photo-upload-label">Subir foto/);
+  assert.doesNotMatch(html, /Añade cada integrante por separado/);
+});
+
 test("group and bracket views render participant avatars", () => {
   const savedState = createSavedState();
   savedState.teams[0].players = [{ id: "p1", name: "A1 player", photo: "data:image/png;base64,a1" }];

@@ -175,9 +175,8 @@ function renderTeams() {
             <input id="teamName" name="name" placeholder="Ej. Laura Martín o Smash Center A" required />
           </div>
           <div class="field individual-photo-field hidden" data-individual-photo-field>
-            <label for="individualPhoto">Foto del jugador</label>
-            <input id="individualPhoto" name="individualPhoto" type="file" accept="image/*" />
-            <span class="field-hint">Si no subes foto, usaremos un avatar por defecto.</span>
+            <label>Foto del jugador</label>
+            ${renderPhotoUpload("individualPhoto", "individualPhoto")}
           </div>
           <div class="field participant-players-field" data-participant-players-field>
             <label>Jugadores del equipo o pareja</label>
@@ -186,7 +185,6 @@ function renderTeams() {
               ${renderPlayerInput("Jugador 2")}
             </div>
             <button class="small-button" type="button" data-action="add-player-field">Añadir jugador</button>
-            <span class="field-hint">Añade cada integrante por separado para evitar errores de formato.</span>
           </div>
           <div class="field">
             <label for="teamNotes">Notas internas</label>
@@ -301,13 +299,19 @@ function renderPlayerInput(placeholder, value = "") {
   return `
     <div class="player-input-row">
       <input name="players" placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(value)}" data-player-input required />
-      <label class="photo-upload">
-        <input class="player-photo-input" name="playerPhotos" type="file" accept="image/*" aria-label="Foto del jugador" data-player-photo-input />
-        <span class="photo-upload-label">Subir foto</span>
-        <span class="photo-upload-status" data-photo-status>Sin foto</span>
-      </label>
+      ${renderPhotoUpload("playerPhotos", "", "player-photo-input")}
       <button class="small-button" type="button" data-action="remove-player-field" aria-label="Eliminar jugador">Quitar</button>
     </div>
+  `;
+}
+
+function renderPhotoUpload(name, id = "", className = "") {
+  return `
+    <label class="photo-upload">
+      <input ${id ? `id="${escapeHtml(id)}"` : ""} class="${escapeHtml(className)}" name="${escapeHtml(name)}" type="file" accept="image/*" aria-label="Foto del jugador" data-player-photo-input />
+      <span class="photo-upload-label">Subir foto</span>
+      <span class="photo-upload-status" data-photo-status>Sin foto</span>
+    </label>
   `;
 }
 
@@ -1118,4 +1122,4 @@ function getPrintRoundRangeLabel(chunk) {
   return first === last ? first : `${first} - ${last}`;
 }
 
-Object.assign(RacketApp, { render: { render, renderModeButtons, renderLanguageButtons, getVisibleSections, isSectionEnabledForCompetition, renderNav, renderDashboard, renderNextStep, renderTeams, renderParticipantFilters, restoreParticipantSearchFocus, renderTeamCard, renderParticipantAvatarGroup, renderParticipantIdentity, renderParticipantMembers, renderPlayerAvatar, renderPlayerInput, renderCompetitions, renderCompetitionCard, renderTeamAssignment, renderGroupStage, renderGroup, renderStandingsTable, renderGroupMatch, renderBracket, getBracketGenerationHelp, renderBracketGenerationStatus, renderBracketExportTools, renderGroupExportTools, getBracketLayout, renderBracketGrid, renderBracketRound, renderBracketConnectorColumn, renderBracketMatch, renderBracketSlot, renderSetInputs, renderReadOnlyScore, renderPublicOverview, renderData, sectionHeader, emptyState, renderCompetitionSelect, renderPrintableGroupPages, getPrintableGroupMeta, renderPrintableGroupMatch, getPrintRoundChunks, getPrintRoundsPerPage, renderPrintableBracketPages, renderPrintableBracketRound, getPrintPageMeta, getPrintRoundRangeLabel } });
+Object.assign(RacketApp, { render: { render, renderModeButtons, renderLanguageButtons, getVisibleSections, isSectionEnabledForCompetition, renderNav, renderDashboard, renderNextStep, renderTeams, renderParticipantFilters, restoreParticipantSearchFocus, renderTeamCard, renderParticipantAvatarGroup, renderParticipantIdentity, renderParticipantMembers, renderPlayerAvatar, renderPlayerInput, renderPhotoUpload, renderCompetitions, renderCompetitionCard, renderTeamAssignment, renderGroupStage, renderGroup, renderStandingsTable, renderGroupMatch, renderBracket, getBracketGenerationHelp, renderBracketGenerationStatus, renderBracketExportTools, renderGroupExportTools, getBracketLayout, renderBracketGrid, renderBracketRound, renderBracketConnectorColumn, renderBracketMatch, renderBracketSlot, renderSetInputs, renderReadOnlyScore, renderPublicOverview, renderData, sectionHeader, emptyState, renderCompetitionSelect, renderPrintableGroupPages, getPrintableGroupMeta, renderPrintableGroupMatch, getPrintRoundChunks, getPrintRoundsPerPage, renderPrintableBracketPages, renderPrintableBracketRound, getPrintPageMeta, getPrintRoundRangeLabel } });

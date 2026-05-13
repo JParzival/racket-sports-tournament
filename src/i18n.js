@@ -85,7 +85,6 @@ const TEXT_TRANSLATIONS_ES_EN = {
     "Añadir jugador": "Add player",
     Quitar: "Remove",
     "Eliminar jugador": "Remove player",
-    "Añade cada integrante por separado para evitar errores de formato.": "Add each member separately to avoid formatting errors.",
     "Notas internas": "Internal notes",
     "Guardar equipo": "Save team",
     "Guardar participante": "Save participant",
